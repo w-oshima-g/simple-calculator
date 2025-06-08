@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var number1 = ""
     @State private var number2 = ""
     @State private var result  = ""
+    @State private var history: [String] = []
     
     var body: some View {
         VStack(spacing: 20) {
@@ -28,31 +29,30 @@ struct ContentView: View {
             
             HStack {
                 Button("+") {
-                    calculate { $0 + $1 }
+                    calculate(operation: +, symbol: "+")
                 }
                 .buttonStyle()
                 
                 Button("-") {
-                    calculate { $0 - $1 }
+                    calculate(operation: -, symbol: "-")
                 }
                 .buttonStyle()
             }
             
             HStack {
                 Button("×") {
-                    calculate { $0 * $1 }
+                    calculate(operation: *, symbol: "×")
                 }
                 .buttonStyle()
                 
                 Button("÷") {
-                    calculate {
-                        if $1 != 0 {
-                            return $0 / $1
-                        } else {
+                    calculate(operation: { n1, n2 in
+                        if n2 == 0 {
                             result = "エラー：0で割れません"
                             return nil
                         }
-                    }
+                        return n1 / n2
+                    }, symbol: "÷")
                 }
                 .buttonStyle()
             }
@@ -70,18 +70,43 @@ struct ContentView: View {
             Text("結果: \(result)")
                 .font(.title2)
                 .padding()
+            
+            Button("リセット") {
+                number1 = ""
+                number2 = ""
+                result = ""
+                history.removeAll()
+            }
+            .padding()
+            .background(Color.red)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+            
+            Text("履歴:")
+                .font(.headline)
+            
+            List(history.reversed(), id: \.self) { item in
+                Text(item)
+            }
+            .frame(height: 200)
+            
+            Spacer()
         }
         .padding()
     }
     
-    private func calculate(_ operation: (Int, Int) -> Int?) {
+    private func calculate(operation: (Int, Int) -> Int?, symbol: String) {
         guard let n1 = Int(number1), let n2 = Int(number2) else {
             result = "数値を正しく入力してください"
             return
         }
-        if let res = operation(n1, n2) {
-            result = String(res)
+        
+        guard let res = operation(n1, n2) else {
+            return
         }
+        
+        result = String(res)
+        history.append("\(n1) \(symbol) \(n2) = \(res)")
     }
 }
 
@@ -94,6 +119,7 @@ extension Button {
             .cornerRadius(10)
     }
 }
+
 #Preview {
     ContentView()
 }
